@@ -1,0 +1,6 @@
+cd $GOPATH/src/github.com/pcelvng/task/quickstart/taskmaster
+go build
+
+./taskmaster -type='hello-world' -info='Hello World!'
+
+{"type":"hello-world","info":"Hello World!","created":"2019-06-04T20:46:32Z"}

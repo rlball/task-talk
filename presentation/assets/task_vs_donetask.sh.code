@@ -1,0 +1,19 @@
+$ cat tsk.json | jq .
+
+{
+  "type": "hello-world",
+  "info": "Hello World!",
+  "created": "2017-01-01T00:00:01Z"
+}
+
+$ cat done.json | jq .
+
+{
+  "type": "hello-world",
+  "info": "Hello World!",
+  "created": "2017-01-01T00:00:01Z",
+  "result": "complete",
+  "msg": "task complete!",
+  "started": "2019-06-04T20:51:08Z",
+  "ended": "2019-06-04T20:51:08Z"
+}

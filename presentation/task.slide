@@ -1,0 +1,275 @@
+
+Task
+Simple, Powerful, Robust Tasking for Go
+git clone https://github.com/rlball/
+Tags: task, workers,
+
+Ryan Ball
+Tech Lead, Weave
+rball@balldevelopment.com
+https://github.com/pcelvng/task
+
+* Task
+
+    https://github.com/pcelvng/task
+
+* Simple Powerful Task Management
+
+* Players
+
+- Taskmaster (creates tasks)
+- Task Bus (message bus for communicating tasks)
+- Worker (does the work; executes on the task)
+
+.image assets/task-overview-simple.jpg
+
+* Taskmasters
+
+Small services that create tasks.
+
+.image assets/taskmaster_willie.png
+
+* Message Bus
+
+Message bus to carry the task message to the workers. Currently implements NSQ.
+
+.image assets/simpsons_bus.jpg
+
+* Workers
+
+Small services that do the work.
+
+.image assets/roscoe_worker.jpg
+
+* Basic Flow
+
+.image assets/task-overview-simple.jpg
+
+* Quickstart
+
+Let's see it!
+
+.code assets/clone.sh.code
+
+* First Taskmaster
+
+.code assets/first_taskmaster.sh.code
+
+* First Taskmaster Code
+
+.code assets/first_taskmaster_code.go.code
+
+* First Worker
+
+.code assets/first_worker.sh.code
+
+* Done Task
+
+.code assets/first_worker_done.sh.code
+
+* Worker Code
+
+.code assets/first_worker_code.go.code
+
+* Task Vs Done Task
+
+.code assets/task_vs_donetask.sh.code
+
+* "info" Can Be Whatever You Want
+
+* Common Types Of "info" Values:
+
+- Date: "2019/05/04 00:00"
+- File Location: "gcs://gcs.weave.com/some/file/to/process.csv"
+- Empty: ""
+
+* Workers
+
+.image assets/roscoe_worker.jpg
+
+* Workers Are Where The Action Is At!
+
+.image assets/homer_worker.gif
+
+* What Do Workers Do?
+
+- Check on system state
+- Process a file
+- Send an Email
+- Send Flowers To Your Mother
+
+* Anything With a Beginning, Middle, End
+
+* I Solemnly Swear My Workers Will:
+
+- Be Idempotent
+- Do Small Units of Work
+- Be Task Order Agnostic
+
+.image assets/homer_oath.jpg
+
+* Be Idempotent
+
+Run a task and then run it again with predictable end-state.
+
+- May not apply to workers that do not work on system state.
+
+- Either way, should be safe to run anytime, anywhere without causing your system
+to go down.
+
+* Do Small Units of Work
+
+- Large jobs may not scale (an hourly process takes longer than an hour).
+- Small jobs can be broken down and processed on separate machines.
+- Small jobs have a lower chance of failure.
+- Small jobs are faster to re-process.
+
+* Be Task Order Agnostic
+
+1. Dinner
+2. Desert
+
+1. Desert
+2. Dinner
+
+* Work Flows
+
+1. Worker 1 finishes downloading a raw file from a vendor.
+2. Worker 2 picks up the file and transforms it, saving the output to another file.
+3. Worker 3 picks up the transformed file and bulks loads it into a database.
+
+* Worker 1
+
+Receives a task telling it to download a file from a secret location:
+
+    {
+      "type": "worker_1",
+      "info": "s3://secrets.com/super/secret/location.csv"
+    }
+
+It downloads the file and stores it in a file location it owns:
+
+    gcs://iknowthisplace.com/location.csv
+
+It reports back:
+
+    {
+      "type": "worker_1",
+      "info": "s3://secrets.com/super/secret/location.csv",
+      "result": "complete",
+      "msg": "gcs://iknowthisplace.com/location.csv"
+    }
+
+* Worker 1 Continued...
+
+It also creates a ** signal ** that indicates a "result space" state change.
+
+    {
+      "file": "gcs://iknowthisplace.com/location.csv"
+    }
+
+And pushes that signal to the message bus. Where...
+
+* A Taskmaster Is Listening Intently
+
+Which then creates a task directed at Worker 2.
+
+* Worker 2
+
+Receives a task telling it to download a file from a secret location:
+
+    {
+      "type": "worker_2",
+      "info": "gcs://iknowthisplace.com/location.csv"
+    }
+
+Which it does eagerly as well as transform the data and saves it to a new location:
+
+    gcs://iknowthisplace.com/location.json
+
+It reports back:
+
+    {
+      "type": "worker_2",
+      "info": "gcs://iknowthisplace.com/location.csv",
+      "result": "complete",
+      "msg": "gcs://iknowthisplace.com/location.json"
+    }
+
+* Worker 2 Continued...
+
+It also creates a ** signal ** that indicates a "result space" state change.
+
+    {
+      "file": "gcs://iknowthisplace.com/location.json"
+    }
+
+And pushes that signal to the message bus. Where...
+
+* A Taskmaster Is Listening Intently
+
+Which then creates a task directed at Worker 3.
+
+* Worker 3
+
+Receives a task telling it to download the processed file:
+
+    {
+      "type": "worker_3",
+      "info": "gcs://iknowthisplace.com/location.json"
+    }
+
+It downloads the file and safely places the records in Postgres.
+
+It reports back:
+
+    {
+      "type": "worker_3",
+      "info": "gcs://iknowthisplace.com/location.json",
+      "result": "complete",
+      "msg": "inserted 100 records in 50ms"
+    }
+
+* Worker 3 Continued...
+
+It also creates a ** signal ** that indicates a "result space" state change in Postgres.
+
+    {
+      "table": "secrets.all_secrets",
+      "rows": "100",
+      "duration": "50",
+    }
+
+And pushes that signal to the message bus. Where...
+
+* The End
+
+* Well, Almost
+
+.image assets/homer_the_end.png
+
+* One More Thing...
+
+* Let Me Tell You About A Good Friend of Mine...
+
+* Task Tools
+
+    go get github.com/pcelvng/task-tools.git
+
+.image assets/homer_tools.gif
+
+* Task Tools Provides:
+
+- File reading and writing.
+- Database bulk loading (with 'db' struct tag support for mapping fields).
+- Worker and taskmaster application bootstrapping.
+- Opinions on how to format 'info' with subsequent parsing.
+- General purpose taskmasters, workers and other utilities.
+
+.link https://github.com/pcelvng/task-tools.git
+
+* The End
+
+* For Realz
+
+.image assets/simpsons_atomic_bomb.jpg

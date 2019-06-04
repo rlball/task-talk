@@ -1,0 +1,5 @@
+$ cd ../worker
+$ go build
+
+$ cat tsk.json | ./worker > done.json
+2019/06/04 14:51:08 Hello World!
